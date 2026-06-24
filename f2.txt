@@ -1,1 +1,68 @@
-Welcome to devops
+azure pipleline:
+azureuser@ltimvm2:~$ sudo su
+root@ltimvm2:/home/azureuser# git clone https://github.com/aws-samples/eb-tomcat-snakes
+root@ltimvm2:/home/azureuser# ls
+eb-tomcat-snakes
+root@ltimvm2:/home/azureuser# cd eb-tomcat-snakes/
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# ll
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# rm -rf .git
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git init
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git add . && git commit -m "added"
+[master (root-commit) 09d6ec8] added
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git status
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git remote -v
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git remote add origin git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/ltimdevops-project
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# ssh-keygen -t rsa -b 4096
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# cd /root/.ssh
+root@ltimvm2:~/.ssh# cat id_rsa.pub
+root@ltimvm2:~/.ssh# cd /home/azureuser/eb-tomcat-snakes/
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git remote -v
+origin  git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/ltimdevops-project (fetch)
+origin  git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/ltimdevops-project (push)
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git push origin master
+root@ltimvm2:/home/azureuser/eb-tomcat-snakes# exit
+exit
+azureuser@ltimvm2:~$ wget https://download.agent.dev.azure.com/agent/4.274.1/vsts-agent-linux-x64-4.274.1.tar.gz
+azureuser@ltimvm2:~$ tar zxvf vsts-agent-linux-x64-4.274.1.tar.gz
+azureuser@ltimvm2:~$ ls
+Enter server URL > https://dev.azure.com/rishabh17816739072750650/
+Enter authentication type (press enter for PAT) >
+Enter personal access token > ************************************************************************************
+Connecting to server ...
+Enter agent pool (press enter for default) > ltim
+Enter agent name (press enter for ltimvm2) > ltim
+Scanning for tool capabilities.
+Connecting to the server.
+Successfully added the agent
+Testing agent connection.
+Enter work folder (press enter for _work) >
+2026-06-24 05:22:07Z: Settings Saved.
+azureuser@ltimvm2:~$ ./run.sh &
+[1] 2815
+
+pipeline code:
+trigger:
+- master
+ 
+pool:
+  ltim
+ 
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+ 
+- script: |
+    sudo apt update 
+    sudo apt install -y openjdk-8-jdk 
+    sudo apt install -y openjdk-11-jdk 
+    sudo apt install -y tomcat9 tomcat9-admin 
+    sudo chmod 777 build.sh  
+    sudo rm -rf ROOT.war 
+    ./build.sh 
+    sudo rm -rf /var/lib/tomcat9/webapps/* 
+    sudo cp ROOT.war /var/lib/tomcat9/webapps
+  displayName: ' Deploying a Tomcat Application '
+
+
+azure peering:
+
