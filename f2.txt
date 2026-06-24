@@ -22,6 +22,7 @@ origin  git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/lti
 root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git push origin master
 root@ltimvm2:/home/azureuser/eb-tomcat-snakes# exit
 exit
+go to project settings - pipeline- agent pools - create  a agent - select - click on agent - new agent - then cpoy the download the agent - and paste 
 azureuser@ltimvm2:~$ wget https://download.agent.dev.azure.com/agent/4.274.1/vsts-agent-linux-x64-4.274.1.tar.gz
 azureuser@ltimvm2:~$ tar zxvf vsts-agent-linux-x64-4.274.1.tar.gz
 azureuser@ltimvm2:~$ ls
