@@ -65,4 +65,17 @@ steps:
 
 
 azure peering:
+Phase 1: Set up the Initial Infrastructure
+1.Create a Resource group
+2.Create the First virtual machine
+3.Configure Networking for VM-1
+Phase 2: Connect to VM-1 & Observe the Isolation
+1.SSH into VM-1
+2.Create a second Virtual Network
+3.Create a second Virtual Machine
+Phase 3: Verify the ping Failure (Before Peering)
+Phase 4: Configure VNet Peering
+1.Navigate to the peering settings
+2.Configurate the peering link
+Phase 5: Final output verification
 
