@@ -1,1 +1,74 @@
-WELCOME TO LTM
+ansible :
+
+ubuntu@ip-192-168-2-232:~$ sudo su
+root@ip-192-168-2-232:/home/ubuntu# apt update
+root@ip-192-168-2-232:/home/ubuntu# ssh-keygen -t rsa -b 4096 -m pem
+root@ip-192-168-2-232:/home/ubuntu# cd /root/.ssh
+root@ip-192-168-2-232:~/.ssh# cat id_rsa.pub
+root@ip-192-168-2-232:~/.ssh# ssh root@private IP of all instance
+root@ip-192-168-2-232:/home/ubuntu# sudo apt install software-properties-common
+root@ip-192-168-2-232:/home/ubuntu# sudo add-apt-repository --yes --update ppa:ansible/ansible
+root@ip-192-168-2-232:/home/ubuntu# sudo apt install ansible
+root@ip-192-168-2-232:/home/ubuntu# nano inventory.ini
+root@ip-192-168-2-232:/home/ubuntu# nano nginx.yml
+root@ip-192-168-2-232:/home/ubuntu# cat nginx.yml
+root@ip-192-168-2-232:/home/ubuntu# ansible-playbook -i inventory.ini nginx.yml
+root@ip-192-168-2-232:/home/ubuntu# ansible slaves -i inventory.ini -m shell -a "nginx -v"
+root@ip-192-168-2-232:/home/ubuntu# nano java.yml
+root@ip-192-168-2-232:/home/ubuntu# cat java.yml
+root@ip-192-168-2-232:/home/ubuntu# ansible-playbook -i inventory.ini java.yml
+root@ip-192-168-2-232:/home/ubuntu# compgen -u
+root@ip-192-168-2-232:/home/ubuntu# nano adduser.yml
+
+
+useplaybook.yml
+- name: Create user on master and slaves
+  hosts: all   # applies to master, slave1, slave2 (defined in inventory.ini)
+  become: yes
+ 
+  tasks:
+    - name: Ensure user 'rishabh' exists
+      user:
+        name: rishabh
+        state: present
+        shell: /bin/bash
+        create_home: yes
+ 
+nginx.yml
+- name: Install nginx
+  hosts: all
+  become: yes
+ 
+  tasks:
+    - name: update apt repository cache
+      apt:
+        update_cache: yes
+ 
+    - name: Install Nginx web server
+      apt:
+        name: nginx
+        state: present
+ 
+    - name: Check service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+ 
+java.yml
+- name: Install OpenJDK 21
+  hosts: all
+  become: yes
+ 
+  tasks:
+    - name: update apt repository cache
+      apt:
+        update_cache: yes
+ 
+    - name: Install OpenJDK 21
+      apt:
+        name: openjdk-21-jdk
+        state: present
+
+
+
