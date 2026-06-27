@@ -1,82 +1,162 @@
-azure pipleline:
-azureuser@ltimvm2:~$ sudo su
-root@ltimvm2:/home/azureuser# git clone https://github.com/aws-samples/eb-tomcat-snakes
-root@ltimvm2:/home/azureuser# ls
-eb-tomcat-snakes
-root@ltimvm2:/home/azureuser# cd eb-tomcat-snakes/
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# ll
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# rm -rf .git
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git init
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git add . && git commit -m "added"
-[master (root-commit) 09d6ec8] added
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git status
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git remote -v
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git remote add origin git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/ltimdevops-project
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# ssh-keygen -t rsa -b 4096
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# cd /root/.ssh
-root@ltimvm2:~/.ssh# cat id_rsa.pub
-root@ltimvm2:~/.ssh# cd /home/azureuser/eb-tomcat-snakes/
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git remote -v
-origin  git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/ltimdevops-project (fetch)
-origin  git@ssh.dev.azure.com:v3/rishabh17816739072750650/ltimdevops-project/ltimdevops-project (push)
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# git push origin master
-root@ltimvm2:/home/azureuser/eb-tomcat-snakes# exit
-exit
-go to project settings - pipeline- agent pools - create  a agent - select - click on agent - new agent - then cpoy the download the agent - and paste 
-azureuser@ltimvm2:~$ wget https://download.agent.dev.azure.com/agent/4.274.1/vsts-agent-linux-x64-4.274.1.tar.gz
-azureuser@ltimvm2:~$ tar zxvf vsts-agent-linux-x64-4.274.1.tar.gz
-azureuser@ltimvm2:~$ ls
-Enter server URL > https://dev.azure.com/rishabh17816739072750650/
-Enter authentication type (press enter for PAT) >
-Enter personal access token > ************************************************************************************
-Connecting to server ...
-Enter agent pool (press enter for default) > ltim
-Enter agent name (press enter for ltimvm2) > ltim
-Scanning for tool capabilities.
-Connecting to the server.
-Successfully added the agent
-Testing agent connection.
-Enter work folder (press enter for _work) >
-2026-06-24 05:22:07Z: Settings Saved.
-azureuser@ltimvm2:~$ ./run.sh &
-[1] 2815
-
-pipeline code:
-trigger:
-- master
+terraform state
+1. create two ec2 instance
+2. connect both ec2 instance to cli
+3. then install terraform in both ec2 instance machines
+STEP 4 define and apply the core infrastructure configuration----
+4. in first ec2 instance make a nano provider.tf -->>nano vpc.tf fil --->>nano subnet.tf -->>nano rt.tf -->nano rta.tf-->>nano igw.tf --> nano sg.tf-->nano ec2.tf
+STEP 5 initialize and build the infra...  ->terraform init  ---->terraform validate---> terraform plan---> terraform apply --auto-approve
+STEP 6 make a directory with name backend
+7. mkdir backend ---- >cd backend/--->
+8. make nano s3.tf configuration file ->terraform init ->terraform plan ->terraform apply  go to aws -> see s3 bucket is created
+9. make dynamodb.tf file -> terraform init -> terraform plan -> terraform apply --auto-approve -> go to aws to see dynamodb table -> make nano backend.tf file ->terraform init  -> ls  -> rm terraform.tfstate -> rm terraform.tfstate.backup -> terraform plan --> terraform refresh -> terraform apply --auto -approve
+10. go to ec2 second machine - >make nano vpc.tf file -> nano backend.tf->rterraform init  -> terraform plan - >ls  -> nano dynamodb.tf  -> nano s3.tf - >terraform plan -> terraform apply ( lock is created go and see )
+11. go to ec2 first macine -> backend# ls ->cd ..  --> cp *./tf backend/  ->> cd backend/ -->ls  -->> terraform plan --->> error state lock  
+-----------------------------------
+provider.tf------
+provider "aws" {
+region = "ap-south-1"
+}
+===============================
  
-pool:
-  ltim
+vpc.tf:
+resource "aws_vpc" "mindtree_vpc" {
+  cidr_block       = "192.168.0.0/16"
  
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
  
-- script: |
-    sudo apt update 
-    sudo apt install -y openjdk-8-jdk 
-    sudo apt install -y openjdk-11-jdk 
-    sudo apt install -y tomcat9 tomcat9-admin 
-    sudo chmod 777 build.sh  
-    sudo rm -rf ROOT.war 
-    ./build.sh 
-    sudo rm -rf /var/lib/tomcat9/webapps/* 
-    sudo cp ROOT.war /var/lib/tomcat9/webapps
-  displayName: ' Deploying a Tomcat Application '
-
-
-azure peering:
-Phase 1: Set up the Initial Infrastructure
-1.Create a Resource group
-2.Create the First virtual machine
-3.Configure Networking for VM-1
-Phase 2: Connect to VM-1 & Observe the Isolation
-1.SSH into VM-1
-2.Create a second Virtual Network
-3.Create a second Virtual Machine
-Phase 3: Verify the ping Failure (Before Peering)
-Phase 4: Configure VNet Peering
-1.Navigate to the peering settings
-2.Configurate the peering link
-Phase 5: Final output verification
-
+  tags = {
+    Name = "mindtree_vpc"
+  }
+}
+===============================
+subnet.tf---
+  resource "aws_subnet" "public-subnet" {
+  vpc_id                  = aws_vpc.mindtree_vpc.id
+  cidr_block              = "192.168.0.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "ap-south-1a"
+ 
+  tags = {
+    Name = "public-subnet"
+  }
+}
+======================================
+rt.tf----
+resource "aws_route_table" "public-rt" {
+  vpc_id = aws_vpc.mindtree_vpc.id
+ 
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+ 
+  tags = {
+    Name = "public-rt"
+  }
+}
+==============================================
+igw.tf----
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.mindtree_vpc.id
+ 
+  tags = {
+    Name = "mindtree-igw"
+  }
+}
+==================================================
+rta.tf---
+resource "aws_route_table_association" "rt_association" {
+  subnet_id      = aws_subnet.public-subnet.id
+  route_table_id = aws_route_table.public-rt.id
+}
+=======================================================
+nano sg.tf----
+resource "aws_security_group" "mindtree_sg" {
+  name        = "mindtree-sg"
+  description = "Allow SSH and all traffic"
+  vpc_id      = aws_vpc.mindtree_vpc.id
+ 
+  # SSH access
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+ 
+  # Allow all inbound traffic
+  ingress {
+    description = "All traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+ 
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+ 
+  tags = {
+    Name = "mindtree-security-group"
+  }
+}
+===================================================
+ec2.tf----
+resource "aws_instance" "demo_ec2" {
+  ami                    = "ami-02b8269d5e85954ef"
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.public-subnet.id
+  vpc_security_group_ids = [aws_security_group.mindtree_sg.id]
+ 
+  tags = {
+    Name = "terraform-ec2"
+  }
+}
+===========================================================
+s3.tf-------
+resource "aws_s3_bucket" "tf_state" {
+  bucket = "mindtreeterraform"
+ 
+  tags = {
+    Name = "mindtreeterraform"
+  }
+}
+ 
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.tf_state.id
+ 
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+=======================================================
+dynamodb.tf-----
+resource "aws_dynamodb_table" "tf_lock"{
+  name         = "terraform-lock-table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+ 
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+ 
+  tags = {
+    Name = "terraform-lock"
+  }
+}
+==========================================================
+backend.tf------------
+terraform {
+  backend "s3" {
+    bucket         = "mindtreeterraform"
+    key            = "dev/vpc/terraform.tfstate"
+    region         = "ap-south-1"
+    dynamodb_table = "terraform-lock-table"
+    encrypt        = true
+  }
