@@ -1,128 +1,248 @@
-pv -pvc
-[ec2-user@ip-192-168-11-227 ~]$ sudo su
-[root@ip-192-168-11-227 ec2-user]# yum update
-[root@ip-192-168-11-227 ec2-user]# curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
-[root@ip-192-168-11-227 ec2-user]# curl -sL https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz | tar xz
-[root@ip-192-168-11-227 ec2-user]# ls
-eksctl  kubectl
-[root@ip-192-168-11-227 ec2-user]# chmod 777 kubectl
-[root@ip-192-168-11-227 ec2-user]# ls
-eksctl  kubectl
-[root@ip-192-168-11-227 ec2-user]# mv eksctl kubectl /usr/local/bin/
-[root@ip-192-168-11-227 ec2-user]# ls
-[root@ip-192-168-11-227 ec2-user]# eksctl
-[root@ip-192-168-11-227 ec2-user]# kubectl
-[root@ip-192-168-11-227 ec2-user]# aws sts get-caller-identity
-[root@ip-192-168-11-227 ec2-user]# eksctl get cluster --region ap-south-1
-[root@ip-192-168-11-227 ec2-user]# aws eks update-kubeconfig \--region ap-south-1 \--name eksltimcluster
-[root@ip-192-168-11-227 ec2-user]# cd /root
-[root@ip-192-168-11-227 ~]# ls -al
-[root@ip-192-168-11-227 ~]# cd .kube
-[root@ip-192-168-11-227 .kube]# ll
-[root@ip-192-168-11-227 .kube]# cat config
-[root@ip-192-168-11-227 .kube]# cd /home/ec2-user/
-[root@ip-192-168-11-227 ec2-user]# kubectl get nodes
-[root@ip-192-168-11-227 ec2-user]# kubectl get pods -A
-[root@ip-192-168-11-227 ec2-user]# kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver
-[root@ip-192-168-11-227 ec2-user]# kubectl get pv
-No resources found
-[root@ip-192-168-11-227 ec2-user]# nano pv.yml
-[root@ip-192-168-11-227 ec2-user]# kubectl apply -f pv.yml
-storageclass.storage.k8s.io/ebs-gp3 created
-[root@ip-192-168-11-227 ec2-user]# nano pvc.yml
-[root@ip-192-168-11-227 ec2-user]# kubectl apply -f pvc.yml
-persistentvolumeclaim/app-data-pvc created
-[root@ip-192-168-11-227 ec2-user]# kubectl get pvc
-[root@ip-192-168-11-227 ec2-user]# kubectl get pvc
-[root@ip-192-168-11-227 ec2-user]# kubectl get pv
-No resources found
-[root@ip-192-168-11-227 ec2-user]# nano pod.yml
-[root@ip-192-168-11-227 ec2-user]# kubectl apply -f pod.yml
-pod/storagepod created
-[root@ip-192-168-11-227 ec2-user]# kubectl get pv
-[root@ip-192-168-11-227 ec2-user]# kubectl get pvc
-volume is created 
-[root@ip-192-168-11-227 ec2-user]# kubectl exec -it storagepod -- bash
-root@storagepod:/# cd /usr/share/nginx/html/
-root@storagepod:/usr/share/nginx/html# ls
-lost+found
-root@storagepod:/usr/share/nginx/html# touch file1.txt
-root@storagepod:/usr/share/nginx/html# touch file2.txt
-root@storagepod:/usr/share/nginx/html# touch file3.txt
-root@storagepod:/usr/share/nginx/html# touch file4.txt
-root@storagepod:/usr/share/nginx/html# touch file5.txt
-root@storagepod:/usr/share/nginx/html# touch file6.txt
-root@storagepod:/usr/share/nginx/html# ls
-file1.txt  file2.txt  file3.txt  file4.txt  file5.txt  file6.txt  lost+found
-root@storagepod:/usr/share/nginx/html# exit
+docker compose:--
 
-[root@ip-192-168-11-227 ec2-user]# kubectl get pods
-[root@ip-192-168-11-227 ec2-user]# kubectl get pv
-[root@ip-192-168-11-227 ec2-user]# kubectl delete pod storagepod
-[root@ip-192-168-11-227 ec2-user]# kubectl get pv      
-[root@ip-192-168-11-227 ec2-user]# kubectl apply -f pod.yml
-pod/rishabhpod created
-[root@ip-192-168-11-227 ec2-user]# kubectl get pods
-[root@ip-192-168-11-227 ec2-user]# kubectl get pods
-[root@ip-192-168-11-227 ec2-user]# kubectl exec -it rishabhpod -- bash
-root@rishabhpod:/# cd /usr/share/nginx/html
-root@rishabhpod:/usr/share/nginx/html# ls
-file1.txt  file2.txt  file3.txt  file4.txt  file5.txt  file6.txt  lost+found
-root@rishabhpod:/usr/share/nginx/html#
-[root@ip-192-168-11-227 ec2-user]# kubectl delete pod rishabhpod
-pod "rishabhpod" deleted from default namespace
-[root@ip-192-168-11-227 ec2-user]# kubectl get pvc
-[root@ip-192-168-11-227 ec2-user]# kubectl delete pvc app-data-pvc
-persistentvolumeclaim "app-data-pvc" deleted from default namespace
-[root@ip-192-168-11-227 ec2-user]# kubectl get pv
-No resources found
-[root@ip-192-168-11-227 ec2-user]# kubectl get pvc
-No resources found in default namespace.
-
-
-pv.yml------------
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: ebs-gp3
-provisioner: ebs.csi.aws.com
-volumeBindingMode: WaitForFirstConsumer
-allowVolumeExpansion: true
-parameters:
-  type: gp3
-
-
-pvc.yml------
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: app-data-pvc
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: ebs-gp3
-  resources:
-    requests:
-      storage: 4Gi
-
-
-pod.yml-------
-apiVersion: v1
-kind: Pod
-metadata:
-  name: storagepod
-  namespace: default
-spec:
-  containers:
-  - name: web-server
-    image: nginx:latest
+STEP 1: CREATE EC2 INSTANCE
+Create:
+•	Ubuntu 24.04
+•	t2.medium
+•	15 GB storage
+________________________________________
+✅ STEP 2: CONNECT TO INSTANCE
+ssh ubuntu@<PUBLIC-IP>
+________________________________________
+✅ STEP 3: INSTALL DOCKER
+sudo apt update -y
+curl //get.docker.com >> docker.sh
+chmod +x docker.sh
+sudo ./docker.sh
+``
+________________________________________
+✅ STEP 4: VERIFY DOCKER
+docker -v
+docker ps
+________________________________________
+✅ STEP 5: INSTALL DOCKER COMPOSE
+sudo apt install docker-compose -y
+Check:
+docker compose version
+________________________________________
+✅ STEP 6: GO TO WORKING DIRECTORY
+cd /home/ubuntu
+________________________________________
+✅ STEP 7: CREATE FRONTEND DOCKERFILE
+👉 As per your file (netflixfile)
+nano netflixfile
+Paste:
+FROM ubuntu:22.04
+RUN apt update && apt install -y curl wget iputils-ping jq nginx unzip net-tools
+COPY index.html /var/www/html/index.nginx-debian.html
+ADD style.css /var/www/html
+CMD ["nginx","-g","daemon off;"]
+________________________________________
+✅ STEP 8: CREATE HTML FILE
+nano index.html
+👉 Paste any simple content (Netflix style if needed):
+<h1>Welcome to Netflix Clone</h1>
+________________________________________
+✅ STEP 9: CREATE CSS FILE
+nano style.css
+Example:
+body {
+  background-color: black;
+  color: red;
+  text-align: center;
+}
+________________________________________
+✅ STEP 10: CREATE BACKEND DOCKERFILE
+nano tomcatfile
+Paste:
+FROM tomcat:8.0
+LABEL "Owner"="TOMCAT"
+RUN cd /usr/local/tomcat/webapps && rm -rf *
+COPY ROOT.war /usr/local/tomcat/webapps
+CMD ["catalina.sh", "run"]
+________________________________________
+✅ STEP 11: INSTALL JAVA (REQUIRED FOR WAR)
+sudo apt install -y openjdk-21-jdk
+________________________________________
+✅ STEP 12: DOWNLOAD PROJECT
+git clone eb-tomcat-snakes
+cd eb-tomcat-snakes
+________________________________________
+✅ STEP 13: BUILD WAR FILE
+chmod +x build.sh
+./build.sh
+________________________________________
+✅ STEP 14: MOVE WAR FILE
+mv ROOT.war /home/ubuntu/
+cd ..
+________________________________________
+✅ STEP 15: CREATE DOCKER COMPOSE FILE
+nano compose.yml
+``
+Paste:
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: netflixfile
     ports:
-    - containerPort: 80
-    volumeMounts:
-    - name: persistent-storage
-      mountPath: /usr/share/nginx/html
-  volumes:
-  - name: persistent-storage
-    persistentVolumeClaim:
-      claimName: app-data-pvc
+      - "8200:80"
+
+  backend:
+    build:
+      context: .
+      dockerfile: tomcatfile
+    ports:
+      - "8500:8080"
+________________________________________
+✅ STEP 16: RUN DOCKER COMPOSE
+docker compose up
+👉 This will:
+•	Build frontend container ✅
+•	Build backend container ✅
+•	Run both at same time ✅
+________________________________________
+--------------------------------
+terraform infra using veriables:---
+ 
+1)create one insc and launch it 
+2)install terraform on cli
+3)create a role and give administration acces to role and assin to insc 
+4) star creating tf files
+ 
+A --provider:---
+provider "aws" {
+  region = var.region
+}
+ =============================================================================================== 
+B --vpc:---
+resource "aws_vpc" "public_vpc" {
+  cidr_block = var.vpc_cidr
+ 
+  tags = {
+    Name = "public_vpc"
+  }
+}
+ ===============================================================================================
+C --subnet:---
+resource "aws_subnet" "public_subnet" {
+  count = length(var.public_subnet)
+ 
+  vpc_id                  = aws_vpc.public_vpc.id
+  cidr_block              = var.public_subnet[count.index]
+  map_public_ip_on_launch = true
+  availability_zone       = var.availability_zones[count.index]
+ 
+  tags = {
+    Name = "public_subnet-${count.index + 1}"
+  }
+}
+ ================================================================================================= 
+D --igw:---
+resource "aws_internet_gateway" "public_igw" {
+  vpc_id = aws_vpc.public_vpc.id
+ 
+  tags = {
+    Name = "public_igw"
+  }
+}
+ ===================================================================================================
+E --RT:---
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.public_vpc.id
+ 
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.public_igw.id
+  }
+ 
+  tags = {
+    Name = "public_rt"
+  }
+}
+ ==================================================================================================
+F ---rta:---
+resource "aws_route_table_association" "rt_association" {
+  count = length(aws_subnet.public_subnet)
+ 
+  subnet_id      = aws_subnet.public_subnet[count.index].id
+  route_table_id = aws_route_table.public_rt.id
+}
+ =================================================================================================== 
+G --sg:---
+resource "aws_security_group" "public_sg" {
+  name        = "public-sg"
+  description = "Allow SSH and HTTP"
+  vpc_id      = aws_vpc.public_vpc.id
+ 
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+ 
+  ingress {
+    description = "ALL Traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+ 
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+ ======================================================================================================================= 
+H ---ec2:---
+resource "aws_instance" "terra_instance" {
+  ami                    = var.ami_id
+  instance_type          = "t3.small"
+  subnet_id              = aws_subnet.public_subnet[0].id
+  vpc_security_group_ids = [aws_security_group.public_sg.id]
+ 
+  tags = {
+    Name = "terra_instance"
+  }
+}
+ =============================================================================================================================
+I ---variables.tf:---
+variable "region" {
+  type = string
+}
+ 
+variable "vpc_cidr" {
+  type = string
+}
+ 
+variable "public_subnet" {
+  type = list(string)
+}
+ 
+variable "availability_zones" {
+  type = list(string)
+}
+ 
+variable "ami_id" {
+  type = string
+}
+ ================================================================================================================ 
+J ---terraform.tfvars:----
+region = "ap-south-1"
+ 
+vpc_cidr = "198.170.0.0/16"
+ 
+public_subnet = [
+  "198.170.1.0/24"
+]
+ 
+availability_zones = [
+  "ap-south-1a"
+]
+ 
+ami_id = "ami-087d1c9a513324697"
