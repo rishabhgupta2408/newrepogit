@@ -1,74 +1,60 @@
-ansible :
+github
+GitHub:
+GitHub actions---
+1. launch an aws ec2 instance -> ubuntu 22.04
+2. make a GitHub repo
+3. connect ec2 instance to cli
+4. establish ssh key authentication --> ssh-keygen -t rsa -b 4096  ->>cat /root/.ssh/id_Rsa.pub -> add deploy key to GitHub
+5. clone the tomcat repo -> git clone.... -->cd eb-snakes-tomcat/ ->rm -rf .git --> git init (re-initialize git ) ->git add . && git commit -m "added"  -> git status -> git remote add origi........    -> git push origin master.
+6. go to ec2 machine ---> snakes#ls  -> (make a GitHub directory) mkdir .gitHub   -> ll  -> cd .gitHub/ -> mkdir workflows --> (create a yaml file) nano workflow.yml -- > (push the workflow changes to GitHub) github# ll --> mv workflow.yml workflows/  ->> ls  -> cd workflows/ -> ls -> cd ..  ->> cd .. ->> snakes# git add . && git commit -m "workflow added"
+7. download and configure the self hosted runner on ec2 -->
+8. start the runner execution ./ruu.sh &
+9. go to ec2 machine --> sudo su --> runner # cd.. ->>snakes# ls --> git status --> git push origin master
+10. testing and triggering the automated pipeline
+------------------------------------------------------------
+name: Build and Deplay to Tomcat9
 
-ubuntu@ip-192-168-2-232:~$ sudo su
-root@ip-192-168-2-232:/home/ubuntu# apt update
-root@ip-192-168-2-232:/home/ubuntu# ssh-keygen -t rsa -b 4096 -m pem
-root@ip-192-168-2-232:/home/ubuntu# cd /root/.ssh
-root@ip-192-168-2-232:~/.ssh# cat id_rsa.pub
-root@ip-192-168-2-232:~/.ssh# ssh root@private IP of all instance
-root@ip-192-168-2-232:/home/ubuntu# sudo apt install software-properties-common
-root@ip-192-168-2-232:/home/ubuntu# sudo add-apt-repository --yes --update ppa:ansible/ansible
-root@ip-192-168-2-232:/home/ubuntu# sudo apt install ansible
-root@ip-192-168-2-232:/home/ubuntu# nano inventory.ini
-root@ip-192-168-2-232:/home/ubuntu# nano nginx.yml
-root@ip-192-168-2-232:/home/ubuntu# cat nginx.yml
-root@ip-192-168-2-232:/home/ubuntu# ansible-playbook -i inventory.ini nginx.yml
-root@ip-192-168-2-232:/home/ubuntu# ansible slaves -i inventory.ini -m shell -a "nginx -v"
-root@ip-192-168-2-232:/home/ubuntu# nano java.yml
-root@ip-192-168-2-232:/home/ubuntu# cat java.yml
-root@ip-192-168-2-232:/home/ubuntu# ansible-playbook -i inventory.ini java.yml
-root@ip-192-168-2-232:/home/ubuntu# compgen -u
-root@ip-192-168-2-232:/home/ubuntu# nano adduser.yml
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+jobs:
+  build-and-deplay:
+    runs-on: [self-hosted ,dev]
 
+    env:
+      WAR_NAME: "ROOT.war"
+      TOMCAT_WEBAPPS: "/var/lib/tomcat9/webapps"
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-useplaybook.yml
-- name: Create user on master and slaves
-  hosts: all   # applies to master, slave1, slave2 (defined in inventory.ini)
-  become: yes
- 
-  tasks:
-    - name: Ensure user 'rishabh' exists
-      user:
-        name: rishabh
-        state: present
-        shell: /bin/bash
-        create_home: yes
- 
-nginx.yml
-- name: Install nginx
-  hosts: all
-  become: yes
- 
-  tasks:
-    - name: update apt repository cache
-      apt:
-        update_cache: yes
- 
-    - name: Install Nginx web server
-      apt:
-        name: nginx
-        state: present
- 
-    - name: Check service
-      service:
-        name: nginx
-        state: started
-        enabled: yes
- 
-java.yml
-- name: Install OpenJDK 21
-  hosts: all
-  become: yes
- 
-  tasks:
-    - name: update apt repository cache
-      apt:
-        update_cache: yes
- 
-    - name: Install OpenJDK 21
-      apt:
-        name: openjdk-21-jdk
-        state: present
+      - name: Make build.sh executable
+        run: sudo chmod +x build.sh
+
+      - name: REMOVE WAR FILE
+        run: sudo rm -rf ROOT.War
+
+      - name: INSTALL OPENJDK-8
+        run: sudo bash -c "apt update && apt install -y openjdk-8-jdk"
+
+      - name: build WAR using build.sh
+        run: ./build.sh
+
+      - name: INSTALL OPENJDK-11
+        run: sudo apt update && sudo apt install -y openjdk-11-jdk
+
+      - name: Install Tomcat
+        run: sudo apt install -y tomcat9 tomcat9-admin
+
+      - name: restart tomcat9
+        run: sudo systemctl restart tomcat9
+
+      - name: Deploy WAR to Tomcat
+        run : |
+          sudo rm -rf "$TOMCAT_WEBAPPS"/*
+          sudo cp "$WAR_NAME" "TOMCAT_WEBAPPS"
+-------------------------------------
 
 
 
